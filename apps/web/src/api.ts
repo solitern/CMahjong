@@ -41,7 +41,10 @@ async function send(path: string, options: RequestInit = {}) {
   if (response.status === 204) return null;
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = body?.error?.message || "请求失败";
+    const message = body?.error?.message
+      || (response.status === 502 || response.status === 504
+        ? "接口没有起来。请在服务器查看 docker compose logs api"
+        : `请求失败（${response.status}）`);
     throw new Error(message);
   }
   return body;

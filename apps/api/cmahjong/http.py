@@ -14,6 +14,7 @@ from argon2.exceptions import VerifyMismatchError
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 
 from cmahjong.ai.heuristic import VERSION
 from cmahjong.db import Game, GameEvent, Save, SessionLocal, SessionRow, User, health_db, init_db
@@ -38,11 +39,16 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="四川麻将训练", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.environ.get("WEB_ORIGIN", "http://localhost:5173")],
+    allow_origins=[item.strip() for item in os.environ.get("WEB_ORIGIN", "http://localhost:5173").split(",") if item.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def database_error(_request: Request, _exc: SQLAlchemyError):
+    return _error(503, "db_error", "数据库没有连上。请在服务器执行 docker compose -f deploy/docker-compose.yml logs api")
 
 
 def _now() -> datetime:

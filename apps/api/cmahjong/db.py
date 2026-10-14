@@ -3,12 +3,26 @@
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime
+from urllib.parse import quote_plus
 
 from sqlalchemy import DateTime, ForeignKey, Integer, LargeBinary, String, Text, create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./cmahjong.db")
+def resolve_database_url() -> str:
+    """密码单独传入再编码，避免 @、#、% 把连接串拆坏。"""
+    host = os.environ.get("POSTGRES_HOST")
+    password = os.environ.get("POSTGRES_PASSWORD")
+    if host and password is not None:
+        user = quote_plus(os.environ.get("POSTGRES_USER", "cmahjong"))
+        name = quote_plus(os.environ.get("POSTGRES_DB", "cmahjong"))
+        port = os.environ.get("POSTGRES_PORT", "5432")
+        return f"postgresql+psycopg://{user}:{quote_plus(password)}@{host}:{port}/{name}"
+    return os.environ.get("DATABASE_URL", "sqlite:///./cmahjong.db")
+
+
+DATABASE_URL = resolve_database_url()
 
 
 class Base(DeclarativeBase):
@@ -90,10 +104,18 @@ SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 
 def init_db() -> None:
-    if DATABASE_URL.startswith("postgresql"):
-        with engine.begin() as conn:
-            conn.execute(text("CREATE EXTENSION IF NOT EXISTS citext"))
-    Base.metadata.create_all(engine)
+    last_error: Exception | None = None
+    for attempt in range(30):
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            Base.metadata.create_all(engine)
+            return
+        except Exception as exc:
+            last_error = exc
+            time.sleep(2)
+    assert last_error is not None
+    raise last_error
 
 
 def health_db() -> bool:

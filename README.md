@@ -215,4 +215,6 @@ docker exec -i cmahjong-postgres psql -U cmahjong cmahjong < cmahjong-2026-01-01
 - 镜像已经在 `docker images` 里，报错出现在 `pip install`：改 `PIP_INDEX_URL`，然后 `docker compose -f deploy/docker-compose.yml build --no-cache api`。
 - 报错出现在 `npm install` 或 `npm run build`：改 `NPM_REGISTRY`，然后 `docker compose -f deploy/docker-compose.yml build --no-cache nginx`。
 - 容器都是 running，浏览器打不开：看安全组是不是 23333，以及 `docker compose ps` 里 nginx 的端口映射是不是 `0.0.0.0:23333->23333`。
-- 能打开页面，一点登录就失败：看 api 日志。多半是数据库还没就绪，等十几秒再试；或者 `POSTGRES_PASSWORD` 改过之后旧卷里的密码还是旧的。旧卷要沿用原来的密码，不能只改 `.env`。
+- 能打开页面，注册或登录显示「请求失败」或「接口没有起来」：网页已经在，接口或数据库没有。先看 `docker compose -f deploy/docker-compose.yml ps`，`cmahjong-api` 应是 running。再看 `docker compose -f deploy/docker-compose.yml logs --tail 80 api`。
+- 日志里是密码认证失败：数据卷是用第一次的 `POSTGRES_PASSWORD` 初始化的。之后只改 `.env` 不会改掉库里的密码。把 `.env` 改回第一次的密码，或者确认可以清空对局后执行 `docker compose -f deploy/docker-compose.yml down -v` 再重新 `up -d --build`。
+- 更新到这次修复后要重建网页和接口，否则浏览器里还是旧页面：`docker compose -f deploy/docker-compose.yml up -d --build`。

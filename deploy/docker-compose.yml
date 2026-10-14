@@ -8,6 +8,11 @@ services:
       POSTGRES_DB: cmahjong
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     restart: unless-stopped
 
   api:
@@ -18,12 +23,16 @@ services:
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
     container_name: cmahjong-api
     environment:
-      DATABASE_URL: postgresql+psycopg://cmahjong:${POSTGRES_PASSWORD:-cmahjong}@postgres:5432/cmahjong
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: cmahjong
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cmahjong}
+      POSTGRES_DB: cmahjong
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       ALLOW_REGISTER: ${ALLOW_REGISTER:-true}
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:23333}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   nginx:
