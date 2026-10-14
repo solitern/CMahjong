@@ -37,7 +37,9 @@ npm run dev
 docker compose -f deploy/docker-compose.yml up -d --build
 ```
 
-安全组开放 80 和 443。验收走 HTTPS。`COOKIE_SECURE=true` 时浏览器必须用 https 打开，否则登录态存不住。
+对外端口默认是 **23333**，不占用 80。安全组放行 23333。浏览器打开 `http://服务器地址:23333`。本机开发仍用 5173，那个端口只在你自己电脑上。
+
+要改端口，在 `deploy/.env` 里设置 `HTTP_PORT`。`COOKIE_SECURE=true` 时浏览器必须用 https 打开，否则登录态存不住。
 
 ## 规则
 

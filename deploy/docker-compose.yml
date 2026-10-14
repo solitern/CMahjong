@@ -19,7 +19,7 @@ services:
       DATABASE_URL: postgresql+psycopg://cmahjong:${POSTGRES_PASSWORD:-cmahjong}@postgres:5432/cmahjong
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       ALLOW_REGISTER: ${ALLOW_REGISTER:-true}
-      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:23333}
     depends_on:
       - postgres
     restart: unless-stopped
@@ -30,7 +30,7 @@ services:
       dockerfile: deploy/Dockerfile.web
     container_name: cmahjong-nginx
     ports:
-      - "80:80"
+      - "${HTTP_PORT:-23333}:23333"
     depends_on:
       - api
     restart: unless-stopped
