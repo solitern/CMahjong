@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: cmahjong-postgres
+    environment:
+      POSTGRES_USER: cmahjong
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cmahjong}
+      POSTGRES_DB: cmahjong
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    container_name: cmahjong-api
+    environment:
+      DATABASE_URL: postgresql+psycopg://cmahjong:${POSTGRES_PASSWORD:-cmahjong}@postgres:5432/cmahjong
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ALLOW_REGISTER: ${ALLOW_REGISTER:-true}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    container_name: cmahjong-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:

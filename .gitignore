@@ -1,0 +1,15 @@
+.env
+.venv/
+apps/api/cmahjong.db
+apps/api/trace.txt
+apps/api/*.db
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+apps/web/node_modules/
+apps/web/dist/
+*.egg-info/
+.DS_Store
+pgdata/
